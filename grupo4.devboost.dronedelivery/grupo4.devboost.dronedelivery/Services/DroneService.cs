@@ -73,7 +73,30 @@ namespace grupo4.devboost.dronedelivery.Services
                 }
             }
 
+            await LiberarDrones(lDronesPedidosDTO);
+
             return lDronesPedidosDTO;
+        }
+        private async Task LiberarDrones(List<DronesPedidosDTO> statusDrone)
+        {            
+            foreach (var drone in statusDrone)
+            {
+                if (drone.Situacao == "Disponivel")
+                {
+                    var droneBase = await _context.Drone.FindAsync(drone.DroneId);
+
+                    if (droneBase != null)
+                    {
+                        if (droneBase.Perfomance != droneBase.PerfomanceRestante)
+                        {
+                            droneBase.PerfomanceRestante = droneBase.Perfomance;
+                            droneBase.CapacidadeRestante = droneBase.Capacidade;
+                            _context.Entry(droneBase).State = EntityState.Modified;
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                }
+            }
         }
     }
 }
