@@ -6,6 +6,7 @@ namespace grupo4.devboost.dronedelivery.Models
     {
         [Key]
         public int Id { get; set; }
+        
         public int Capacidade { get; set; }
         public int CapacidadeRestante { get; set; }
         public int Velocidade { get; set; }

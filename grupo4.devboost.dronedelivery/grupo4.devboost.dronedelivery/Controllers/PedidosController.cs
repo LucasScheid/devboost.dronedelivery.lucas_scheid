@@ -94,7 +94,13 @@ namespace grupo4.devboost.dronedelivery.Controllers
 
                 var calculo = (droneDTO.Distancia / droneDTO.Drone.Velocidade);
 
-                pedido.DataHoraFinalizacao = DateTime.Now.AddHours(calculo);
+                var pedidos = await _context.Pedido.ToListAsync();
+
+                //Antes de colocar a data de finalizacao, verifica se o drone não tem outro pedido ainda nao finalizado
+                //Caso tiver, considera a data de entrega a partir da data do pedido em aberto
+                DateTime dataHoraEntrega = _pedidoService.BuscarDataEntregaPedidoAbertoDrone(pedidos, droneDTO.Drone.Id);
+
+                pedido.DataHoraFinalizacao = dataHoraEntrega.AddHours(calculo);
 
                 //Atualiza o drone com as novas capacidades de acordo com o pedido atendido
                 _context.Entry(droneDTO.Drone).State = EntityState.Modified;

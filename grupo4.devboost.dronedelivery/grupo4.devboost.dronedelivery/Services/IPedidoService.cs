@@ -9,5 +9,6 @@ namespace grupo4.devboost.dronedelivery.Services
     public interface IPedidoService
     {
         Task<DroneDTO> DroneAtendePedido(Pedido pedido);
+        DateTime BuscarDataEntregaPedidoAbertoDrone(IEnumerable<Pedido> pedidos, int droneId);
     }
 }

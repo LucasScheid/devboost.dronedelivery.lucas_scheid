@@ -83,15 +83,19 @@ namespace grupo4.devboost.dronedelivery.Controllers
             return NoContent();
         }
 
-        // POST: api/Drones
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
         public async Task<ActionResult<Drone>> PostDrone(Drone drone)
         {
             drone.Perfomance = (float)(drone.Autonomia / 60.0f) * drone.Velocidade;
             drone.PerfomanceRestante = drone.Perfomance;
             drone.CapacidadeRestante = drone.Capacidade;
+            drone.Carga = 1;
+
+            if (drone.Capacidade > 12000)
+                drone.Capacidade = 12000;
+
+            if (drone.Autonomia > 35)
+                drone.Autonomia = 35;
 
             _context.Drone.Add(drone);
             await _context.SaveChangesAsync();

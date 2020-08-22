@@ -36,5 +36,18 @@ namespace grupo4.devboost.dronedelivery.Services
 
             return new DroneDTO(buscaDrone, distance);
         }
+
+        public DateTime BuscarDataEntregaPedidoAbertoDrone(IEnumerable<Pedido> pedidos, int droneId)
+        {
+            var busca = pedidos.Where(p => p.DroneId == droneId &&
+                                           p.Situacao == (int)EStatusPedido.DRONE_ASSOCIADO).OrderByDescending(p => p.DataHoraFinalizacao).FirstOrDefault();
+
+            if (busca == null)
+                return DateTime.Now;
+
+            return busca.DataHoraFinalizacao;
+        }
+
+
     }
 }
