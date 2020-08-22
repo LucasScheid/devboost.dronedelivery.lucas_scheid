@@ -4,6 +4,7 @@ using grupo4.devboost.dronedelivery.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,11 +17,13 @@ namespace grupo4.devboost.dronedelivery.Controllers
     {
         private readonly grupo4devboostdronedeliveryContext _context;
         private readonly IDroneService _droneService;
+        private readonly IConfiguration _config;
 
-        public DronesController(grupo4devboostdronedeliveryContext context, IDroneService droneService)
+        public DronesController(grupo4devboostdronedeliveryContext context, IDroneService droneService, IConfiguration config)
         {
             _context = context;
             _droneService = droneService;
+            _config = config;
         }
 
         // GET: api/Drones
@@ -48,7 +51,7 @@ namespace grupo4.devboost.dronedelivery.Controllers
         [HttpGet("GetStatusDrone")]
         public async Task<ActionResult<List<DronesPedidosDTO>>> GetStatusDrone()
         {
-            return Ok(await _droneService.GetStatusDrone());
+            return Ok(await _droneService.GetStatusDrone(_config.GetSection("ConnectionStrings").GetSection("grupo4devboostdronedeliveryContext").Value));
         }
 
         // PUT: api/Drones/5

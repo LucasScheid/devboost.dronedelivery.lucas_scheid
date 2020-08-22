@@ -7,6 +7,6 @@ namespace grupo4.devboost.dronedelivery.Services
     public interface IDroneService
     {
         Task<IEnumerable<Drone>> GetAll();
-        Task<List<DronesPedidosDTO>> GetStatusDrone();
+        Task<List<DronesPedidosDTO>> GetStatusDrone(string connectionString);
     }
 }

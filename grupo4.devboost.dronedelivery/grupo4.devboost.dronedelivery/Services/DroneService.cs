@@ -2,6 +2,7 @@
 using grupo4.devboost.dronedelivery.Data;
 using grupo4.devboost.dronedelivery.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
@@ -13,6 +14,27 @@ namespace grupo4.devboost.dronedelivery.Services
     {
         private readonly grupo4devboostdronedeliveryContext _context;
 
+        private readonly string _sqlCommand = @"select a.DroneId,
+                                                       0 as Situacao,
+                                                       a.Id as PedidoId 
+                                                  from pedido a
+                                                 where a.Situacao = 0
+                                                   and a.DataHoraFinalizacao > @DataHoraAtual
+                                                       union
+                                                select b.Id as DroneId,
+                                                       1 as Situacao,
+                                                       0 as PedidoId
+                                                  from Drone b
+                                                 where b.Id NOT IN (select a.DroneId     
+                                                                      from pedido a
+                                                                     where a.Situacao = 0
+                                                                       and a.DataHoraFinalizacao > @DataHoraAtual)";
+
+        private readonly string _sqlDataHora = @"select max(DataHoraFinalizacao) as DataHoraFinalizacao
+                                                   from pedido
+                                                  where DroneId = @DroneId
+                                                    and Situacao = 0";
+
         public DroneService(grupo4devboostdronedeliveryContext context)
         {
             _context = context;
@@ -23,30 +45,11 @@ namespace grupo4.devboost.dronedelivery.Services
             return await _context.Drone.ToListAsync();
         }
 
-        public async Task<List<DronesPedidosDTO>> GetStatusDrone()
+        public async Task<List<DronesPedidosDTO>> GetStatusDrone(string connectionString)
         {
-            //Foi descontado 3 horas da data atual pois o fuso do banco de dados estava errado
-            string sqlCommand = @"select a.DroneId,
-                                         0 as Situacao,
-                                         a.Id as PedidoId 
-                                  from pedido a
-                                  where a.Situacao <> 2
-                                  and a.DataHoraFinalizacao > dateadd(hour,-3,CURRENT_TIMESTAMP)
-                                  union
-                                  select b.Id as DroneId,
-                                         1 as Situacao,
-                                         0 as PedidoId
-                                  from  Drone b
-                                  where b.Id NOT IN  (
-                                      select a.DroneId     
-                                  from pedido a
-                                  where a.Situacao <> 2
-                                  and a.DataHoraFinalizacao > dateadd(hour,-3,CURRENT_TIMESTAMP)
-                                  ) ";
+            using SqlConnection conexao = new SqlConnection(connectionString);
 
-            using SqlConnection conexao = new SqlConnection("server=localhost;database=desafio-drone-db;user id=sa;password=minha@password");
-
-            var drones = await conexao.QueryAsync<StatusDroneDTO>(sqlCommand);
+            var drones = await conexao.QueryAsync<StatusDroneDTO>(_sqlCommand, new { DataHoraAtual = DateTime.Now });
 
             List<DronesPedidosDTO> lDronesPedidosDTO = new List<DronesPedidosDTO>();
 
@@ -55,7 +58,7 @@ namespace grupo4.devboost.dronedelivery.Services
                 DronesPedidosDTO dronesPedidosDTO = new DronesPedidosDTO
                 {
                     DroneId = drone.DroneId,
-                    Situacao = drone.Situacao ? "Disponivel" : "Ocupado"
+                    Situacao = drone.Situacao ? "Disponivel" : "Atendendo Pedidos"
                 };
 
                 var existeDrone = lDronesPedidosDTO.Where(d => d.DroneId == drone.DroneId).FirstOrDefault();
@@ -68,17 +71,21 @@ namespace grupo4.devboost.dronedelivery.Services
                 }
                 else
                 {
+                    var datahoraDisponivel = await conexao.QueryAsync<LiberacaoDroneDTO>(_sqlDataHora, new { drone.DroneId });
+                    dronesPedidosDTO.DataHoraEstaraDisponivel = datahoraDisponivel.FirstOrDefault().DataHoraFinalizacao == null ? DateTime.Now : Convert.ToDateTime(datahoraDisponivel.FirstOrDefault().DataHoraFinalizacao);
+
                     dronesPedidosDTO.Pedidos.Add(drone.PedidoId);
                     lDronesPedidosDTO.Add(dronesPedidosDTO);
                 }
             }
 
             await LiberarDrones(lDronesPedidosDTO);
+            await FinalizarPedidos();
 
-            return lDronesPedidosDTO;
+            return lDronesPedidosDTO.OrderBy(o=>o.DataHoraEstaraDisponivel).ToList();
         }
         private async Task LiberarDrones(List<DronesPedidosDTO> statusDrone)
-        {            
+        {
             foreach (var drone in statusDrone)
             {
                 if (drone.Situacao == "Disponivel")
@@ -98,5 +105,18 @@ namespace grupo4.devboost.dronedelivery.Services
                 }
             }
         }
+
+        private async Task FinalizarPedidos()
+        {
+            var pedidos = await _context.Pedido.ToListAsync();
+
+            foreach (var pedido in pedidos.Where(p => p.Situacao == (int)EStatusPedido.DRONE_ASSOCIADO && p.DataHoraFinalizacao < DateTime.Now))
+            {
+                pedido.Situacao = (int)EStatusPedido.FINALIZADO;
+                _context.Entry(pedido).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+            }
+        }
+
     }
 }

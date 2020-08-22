@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using grupo4.devboost.dronedelivery.Models;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace grupo4.devboost.dronedelivery.Data
 {
     public class grupo4devboostdronedeliveryContext : DbContext
     {
-        public grupo4devboostdronedeliveryContext (DbContextOptions<grupo4devboostdronedeliveryContext> options)
+        public grupo4devboostdronedeliveryContext(DbContextOptions<grupo4devboostdronedeliveryContext> options)
             : base(options)
         {
         }

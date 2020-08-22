@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace grupo4.devboost.dronedelivery.Models
 {
@@ -7,6 +8,8 @@ namespace grupo4.devboost.dronedelivery.Models
         public int DroneId { get; set; }
         public string Situacao { get; set; }
         public List<int> Pedidos { get; set; }
+
+        public DateTime DataHoraEstaraDisponivel { get; set; }
 
         public DronesPedidosDTO()
         {

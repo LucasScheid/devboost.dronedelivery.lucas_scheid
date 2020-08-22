@@ -20,7 +20,7 @@ namespace grupo4.devboost.dronedelivery.Controllers
         public PedidosController(grupo4devboostdronedeliveryContext context, IPedidoService pedidoService, IDroneService droneService)
         {
             _context = context;
-            _pedidoService = pedidoService;            
+            _pedidoService = pedidoService;
         }
 
         // GET: api/Pedidos
@@ -106,14 +106,15 @@ namespace grupo4.devboost.dronedelivery.Controllers
                 _context.Entry(droneDTO.Drone).State = EntityState.Modified;
 
             }
-            else { 
+            else
+            {
                 pedido.Situacao = (int)EStatusPedido.RECUSADO;
                 pedido.DataHoraFinalizacao = DateTime.Now;
             }
 
             _context.Pedido.Add(pedido);
             await _context.SaveChangesAsync();
-           
+
             return CreatedAtAction("GetPedido", new { id = pedido.Id }, pedido);
         }
 
